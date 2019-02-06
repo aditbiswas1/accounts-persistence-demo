@@ -10,7 +10,7 @@ object AccountActor {
   sealed trait CommandResult
 
   case object CommandAccepted extends CommandResult
-
+  case class AccountResponse(id: String, limit: Int, balance: Int)
 }
 
 class AccountActor(id: AccountId) extends PersistentActor with ActorLogging {
@@ -39,6 +39,7 @@ class AccountActor(id: AccountId) extends PersistentActor with ActorLogging {
     case command: AccountCommand =>
       handleResult(account.handleCommand(command))
     case "print" => println(account)
+    case "get_account" => sender() ! AccountResponse(account.id.value, account.limit, account.balance)
 
   }
 

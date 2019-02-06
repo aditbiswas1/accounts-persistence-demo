@@ -1,11 +1,13 @@
 package accounts.domain
 
 object Account {
-  def create(id: AccountId) = UninitializedAccount(id)
+  def create(id: AccountId) = UninitializedAccount(id, 0, 0)
 }
 
 sealed trait Account extends AggregateRoot[Account, AccountEvent] {
   def id: AccountId
+  def limit: Int
+  def balance: Int
 
   def handleCommand(command: AccountCommand): AccountEvent = command match {
     case StartAccount(balance) => this match {
@@ -22,14 +24,14 @@ sealed trait Account extends AggregateRoot[Account, AccountEvent] {
   }
 }
 
-case class UninitializedAccount(override val id: AccountId) extends Account {
+final case class UninitializedAccount(override val id: AccountId, override val limit: Int, override val balance: Int) extends Account {
 
   override def applyEvent: PartialFunction[AccountEvent, OpenAccount] = {
     case ev@AccountStarted(_, limit, balance) => OpenAccount(id, limit, balance)
   }
 }
 
-case class OpenAccount(override val id: AccountId, limit: Int, balance: Int) extends Account {
+final case class OpenAccount(override val id: AccountId, override val limit: Int, override val balance: Int) extends Account {
 
   override def applyEvent: PartialFunction[AccountEvent, Account] = {
     case ev@BalanceChanged(_, delta) =>
@@ -42,6 +44,6 @@ case class OpenAccount(override val id: AccountId, limit: Int, balance: Int) ext
   }
 }
 
-case class ClosedAccount(override val id: AccountId, limit: Int, balance: Int) extends Account {
+final case class ClosedAccount(override val id: AccountId, override val limit: Int, override val balance: Int) extends Account {
   override def applyEvent: PartialFunction[AccountEvent, Account] = PartialFunction.empty
 }
